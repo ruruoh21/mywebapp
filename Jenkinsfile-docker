@@ -1,0 +1,68 @@
+pipeline {
+    agent none
+
+    stages {
+        stage('Checkout') {
+            agent any
+            steps {
+                git branch: 'main', url: 'https://github.com/ruruoh21/mywebapp'
+            }
+        }
+
+
+        stage('Build') {
+            agent {
+                docker { image 'maven:3-openjdk-17' }
+            }
+            steps {
+                sh 'mvn package -DskipTests=true'
+            }
+        }
+
+        stage('Test') {
+            agent {
+                docker { image 'maven:3-openjdk-17' }
+            }
+            steps {
+                sh 'mvn test'
+            }
+        }
+
+        stage('Build Docker Image') {
+            agent any
+            steps {
+                sh 'docker image build -t mywebapp .'
+            }
+        }
+
+        stage('Tag Docker Image') {
+            agent any
+            steps {
+                sh 'docker image tag mywebapp ruruoh21/mywebapp:latest'
+                sh 'docker image tag mywebapp ruruoh21/mywebapp:$BUILD_NUMBER'
+            }
+        }
+
+        stage('Publish Docker Image') {
+            agent any
+            steps {
+                withDockerRegistry(credentialsId: 'docker-hub-token', 
+                    url: 'https://index.docker.io/v1/') {
+                    sh 'docker image push ruruoh21/mywebapp:latest'
+                    sh 'docker image push ruruoh21/mywebapp:$BUILD_NUMBER'
+                }
+            }
+        }
+
+        stage('Docker Container Deploy to Docker Out of Docker') {
+            agent {
+                docker { image 'docker:dind' }
+            }
+            steps {
+                sh 'docker -H tcp://192.168.56.104:2375 container run --detach --name mywebapp -p 80:8080 ruruoh21/mywebapp:$BUILD_NUMBER'
+            }
+        }
+
+        
+    }
+}
