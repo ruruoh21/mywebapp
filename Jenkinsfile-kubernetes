@@ -5,29 +5,29 @@ pipeline {
 apiVersion: v1
 kind: Pod
 spec:
- containers:
- - name: maven
- image: maven:3-openjdk-11
- command:
- - sleep
- args:
- - infinity
- - name: kaniko
- image: gcr.io/kaniko-project/executor:debug
- command:
- - sleep
- args:
- - infinity
- volumeMounts:
- - name: registry-credentials
- mountPath: /kaniko/.docker
- volumes:
- - name: registry-credentials
- secret:
- secretName: regcred
- items:
- - key: .dockerconfigjson
- path: config.json
+  containers:
+  - name: maven
+    image: maven:3-openjdk-17
+    command:
+    - sleep
+    args:
+    - infinity
+  - name: kaniko
+    image: gcr.io/kaniko-project/executor:debug
+    command:
+    - sleep
+    args:
+    - infinity
+    volumeMounts:
+    - name: registry-credentials
+    mountPath: /kaniko/.docker
+  volumes:
+  - name: registry-credentials
+    secret:
+      secretName: regcred
+      items:
+      - key: .dockerconfigjson
+        path: config.json
 '''
  }
  }
@@ -35,7 +35,7 @@ spec:
  stage('Checkout') {
  steps {
  container('maven') {
- git branch: 'main', url: 'https://github.com/ruruoh21/mywebapp'
+ git branch: 'main', url: 'https://github.com/ruruoh21/mywebapp.git'
  }
  }
  }
